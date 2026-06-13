@@ -47,20 +47,18 @@ async function checkLabel(base64Image, mediaType = 'image/jpeg') {
     throw new Error('Missing base64 image data.')
   }
 
+  const fileBlock = mediaType === 'application/pdf'
+    ? { type: 'document', source: { type: 'base64', media_type: mediaType, data: base64Image } }
+    : { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Image } }
+
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1024,
     messages: [{
       role: 'user',
       content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: mediaType, data: base64Image }
-        },
-        {
-          type: 'text',
-          text: SYSTEM_PROMPT
-        }
+        fileBlock,
+        { type: 'text', text: SYSTEM_PROMPT }
       ]
     }]
   })
