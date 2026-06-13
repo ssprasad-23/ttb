@@ -506,6 +506,104 @@ code {
   vertical-align: top;
 }
 
+.timing-bar {
+  width: 100%;
+  padding: 18px 20px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+
+.timing-stages {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+/* Background line connecting all dots */
+.timing-progress-line {
+  position: absolute;
+  top: 4px; /* center of the 8px dot */
+  left: 12.5%;
+  right: 12.5%;
+  height: 1px;
+  background: var(--border);
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+/* Accent fill that grows as stages complete */
+.timing-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.timing-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  z-index: 1;
+}
+
+.timing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+
+  &.timing-dot--active {
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+    animation: dot-pulse 1.2s ease-in-out infinite;
+  }
+
+  &.timing-dot--done {
+    background: #16a34a;
+    box-shadow: none;
+    animation: none;
+  }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--accent-bg); }
+  50%       { box-shadow: 0 0 0 5px var(--accent-bg); }
+}
+
+.timing-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.timing-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: 0.01em;
+  transition: color 0.15s;
+
+  &.timing-value--active {
+    color: var(--accent);
+  }
+}
+
 .drop-formats {
   font-size: 11px;
   color: var(--text);
