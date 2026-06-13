@@ -1,6 +1,21 @@
 import checkLabel from '../utils/claudecheck.js'
 import toBase64 from '../utils/toBase64.js'
 
+const ACCEPTED_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/tiff', 'application/pdf'
+])
+
+const FIELD_LABELS = {
+  brand_name: 'Brand Name',
+  abv: 'ABV',
+  net_contents: 'Net Contents',
+  class_type: 'Class / Type',
+  bottler_address: 'Bottler Address',
+  government_warning: 'Government Warning',
+}
+
+const FIELD_ORDER = ['brand_name', 'abv', 'net_contents', 'class_type', 'bottler_address', 'government_warning']
+
 export function setupUploader(element) {
   element.innerHTML = `
     <div class="drop-zone" id="drop-zone">
@@ -9,41 +24,87 @@ export function setupUploader(element) {
         <polyline points="17 8 12 3 7 8"/>
         <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
-      <p class="drop-label">Drag &amp; drop an image here</p>
+      <p class="drop-label">Drag &amp; drop files here</p>
       <p class="drop-sub">or <label class="browse-link" for="file-input">browse to upload</label></p>
-      <input type="file" id="file-input" accept="image/*" hidden />
+      <p class="drop-formats">JPG · PNG · WEBP · GIF · TIFF · PDF</p>
+      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,application/pdf" multiple hidden />
     </div>
+    <div class="file-list" id="file-list"></div>
     <div class="preview-actions" id="action-bar" hidden>
-      <button class="check-btn" id="check-btn">Check Label</button>
-      <button class="remove-btn" id="remove-btn">Remove</button>
-    </div>
-    <div class="preview-container" id="preview-container" hidden>
-      <img id="preview-img" src="" alt="Uploaded preview" hidden />
+      <button class="check-btn" id="check-btn">Check Labels</button>
+      <button class="remove-btn" id="remove-btn">Remove All</button>
     </div>
     <div id="result-area"></div>
   `
 
   const dropZone = element.querySelector('#drop-zone')
   const fileInput = element.querySelector('#file-input')
-  const previewContainer = element.querySelector('#preview-container')
-  const previewImg = element.querySelector('#preview-img')
+  const fileListEl = element.querySelector('#file-list')
   const actionBar = element.querySelector('#action-bar')
   const removeBtn = element.querySelector('#remove-btn')
   const checkBtn = element.querySelector('#check-btn')
   const resultArea = element.querySelector('#result-area')
 
-  let currentFile = null
+  let files = []
+  let nextId = 0
 
-  function showPreview(file) {
-    if (!file || !file.type.startsWith('image/')) return
-    currentFile = file
-    const url = URL.createObjectURL(file)
-    previewImg.hidden = true
-    previewImg.onload = () => { previewImg.hidden = false }
-    previewImg.src = url
-    actionBar.hidden = false
-    previewContainer.hidden = false
+  function addFiles(incoming) {
+    for (const file of incoming) {
+      if (!ACCEPTED_TYPES.has(file.type)) continue
+      const id = nextId++
+      const objectUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+      files.push({ file, id, objectUrl })
+    }
+    renderFileList()
+    actionBar.hidden = files.length === 0
     resultArea.innerHTML = ''
+  }
+
+  function removeFile(id) {
+    const idx = files.findIndex(f => f.id === id)
+    if (idx === -1) return
+    const entry = files[idx]
+    if (entry.objectUrl) URL.revokeObjectURL(entry.objectUrl)
+    files.splice(idx, 1)
+    renderFileList()
+    actionBar.hidden = files.length === 0
+    if (files.length === 0) resultArea.innerHTML = ''
+  }
+
+  function renderFileList() {
+    fileListEl.innerHTML = ''
+    for (const { file, id, objectUrl } of files) {
+      const card = document.createElement('div')
+      card.className = 'file-card'
+
+      if (objectUrl) {
+        card.innerHTML = `
+          <img class="file-card__thumb" src="${objectUrl}" alt="${file.name}" />
+          <button class="file-card__remove" aria-label="Remove" data-id="${id}">×</button>
+          <p class="file-card__name" title="${file.name}">${file.name}</p>
+        `
+      } else {
+        card.innerHTML = `
+          <div class="file-card__pdf-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+              <line x1="9" y1="11" x2="15" y2="11"/>
+            </svg>
+            <span class="file-card__pdf-label">PDF</span>
+          </div>
+          <button class="file-card__remove" aria-label="Remove" data-id="${id}">×</button>
+          <p class="file-card__name" title="${file.name}">${file.name}</p>
+        `
+      }
+
+      fileListEl.appendChild(card)
+    }
+
+    fileListEl.querySelectorAll('.file-card__remove').forEach(btn => {
+      btn.addEventListener('click', () => removeFile(Number(btn.dataset.id)))
+    })
   }
 
   dropZone.addEventListener('dragover', (e) => {
@@ -58,54 +119,63 @@ export function setupUploader(element) {
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault()
     dropZone.classList.remove('dragging')
-    showPreview(e.dataTransfer.files[0])
+    addFiles(Array.from(e.dataTransfer.files))
   })
 
   fileInput.addEventListener('change', () => {
-    showPreview(fileInput.files[0])
+    addFiles(Array.from(fileInput.files))
+    fileInput.value = ''
   })
 
   removeBtn.addEventListener('click', () => {
-    URL.revokeObjectURL(previewImg.src)
-    previewImg.src = ''
-    previewImg.hidden = true
-    fileInput.value = ''
-    currentFile = null
+    for (const { objectUrl } of files) {
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+    files = []
+    fileListEl.innerHTML = ''
     actionBar.hidden = true
-    previewContainer.hidden = true
     resultArea.innerHTML = ''
   })
 
   checkBtn.addEventListener('click', async () => {
-    if (!currentFile) return
+    if (files.length === 0) return
     checkBtn.disabled = true
     checkBtn.textContent = 'Checking...'
-    resultArea.innerHTML = '<div class="result-loading">Analyzing label…</div>'
 
-    try {
-      const base64 = await toBase64(currentFile, { includeDataUrl: false })
-      const result = await checkLabel(base64, currentFile.type)
-      renderResult(result)
-    } catch (err) {
-      resultArea.innerHTML = `<div class="result-card result-card--error"><p class="result-error-msg">Error: ${err.message}</p></div>`
-    } finally {
-      checkBtn.disabled = false
-      checkBtn.textContent = 'Check Label'
+    resultArea.innerHTML = ''
+    const containers = {}
+    for (const { file, id } of files) {
+      const group = document.createElement('div')
+      group.className = 'result-group'
+      group.innerHTML = `
+        <div class="result-group__header">${file.name}</div>
+        <div class="result-loading">Analyzing label…</div>
+      `
+      resultArea.appendChild(group)
+      containers[id] = group
     }
+
+    await Promise.allSettled(files.map(async ({ file, id }) => {
+      const container = containers[id]
+      try {
+        const base64 = await toBase64(file, { includeDataUrl: false })
+        const result = await checkLabel(base64, file.type)
+        container.querySelector('.result-loading')?.remove()
+        renderResult(container, result)
+      } catch (err) {
+        container.querySelector('.result-loading')?.remove()
+        const errDiv = document.createElement('div')
+        errDiv.className = 'result-card result-card--error'
+        errDiv.innerHTML = `<p class="result-error-msg">Error: ${err.message}</p>`
+        container.appendChild(errDiv)
+      }
+    }))
+
+    checkBtn.disabled = false
+    checkBtn.textContent = 'Check Labels'
   })
 
-  const FIELD_LABELS = {
-    brand_name: 'Brand Name',
-    abv: 'ABV',
-    net_contents: 'Net Contents',
-    class_type: 'Class / Type',
-    bottler_address: 'Bottler Address',
-    government_warning: 'Government Warning',
-  }
-
-  const FIELD_ORDER = ['brand_name', 'abv', 'net_contents', 'class_type', 'bottler_address', 'government_warning']
-
-  function renderResult(data) {
+  function renderResult(container, data) {
     const passed = typeof data.result === 'string' && data.result.toUpperCase() === 'PASS'
     const statusClass = data.result ? (passed ? 'pass' : 'fail') : 'unknown'
     const statusLabel = data.result ? data.result.toUpperCase() : 'RESULT'
@@ -127,21 +197,22 @@ export function setupUploader(element) {
       </tr>`
     }).join('')
 
-    resultArea.innerHTML = `
-      <div class="result-card result-card--${statusClass}">
-        <div class="result-card__header">
-          <span class="result-badge result-badge--${statusClass}">${statusLabel}</span>
-          <span class="result-title">TTB Label Check</span>
-        </div>
-        ${data.summary ? `<div class="result-summary">${data.summary}</div>` : ''}
-        ${rows ? `
-        <div class="result-card__details">
-          <table class="result-table">
-            <thead><tr><th>Field</th><th>Status</th><th>Details</th></tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>` : ''}
+    const card = document.createElement('div')
+    card.className = `result-card result-card--${statusClass}`
+    card.innerHTML = `
+      <div class="result-card__header">
+        <span class="result-badge result-badge--${statusClass}">${statusLabel}</span>
+        <span class="result-title">TTB Label Check</span>
       </div>
+      ${data.summary ? `<div class="result-summary">${data.summary}</div>` : ''}
+      ${rows ? `
+      <div class="result-card__details">
+        <table class="result-table">
+          <thead><tr><th>Field</th><th>Status</th><th>Details</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>` : ''}
     `
+    container.appendChild(card)
   }
 }
