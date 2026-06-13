@@ -1,8 +1,6 @@
 import './style.css'
-import { setupCounter } from './counter.js'
+import { setupUploader } from './uploader.js'
 
-document.querySelector('#app').innerHTML = `
-  <button id="counter" type="button" class="counter"></button>
-`
+document.querySelector('#app').innerHTML = `<div id="uploader"></div>`
 
-setupCounter(document.querySelector('#counter'))
+setupUploader(document.querySelector('#uploader'))
