@@ -163,29 +163,15 @@ export function setupUploader(element) {
 
   function renderFileList() {
     fileListEl.innerHTML = ''
-    for (const { file, id, objectUrl } of files) {
+    for (const { file, id } of files) {
       const card = document.createElement('div')
-      card.className = 'file-card'
-      card.innerHTML = objectUrl ? `
-        <img class="file-card__thumb" src="${objectUrl}" alt="${file.name}" />
-        <button class="file-card__remove" aria-label="Remove" data-id="${id}">×</button>
-        <p class="file-card__name" title="${file.name}">${file.name}</p>
-      ` : `
-        <div class="file-card__pdf-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="9" y1="15" x2="15" y2="15"/>
-            <line x1="9" y1="11" x2="15" y2="11"/>
-          </svg>
-          <span class="file-card__pdf-label">PDF</span>
-        </div>
-        <button class="file-card__remove" aria-label="Remove" data-id="${id}">×</button>
-        <p class="file-card__name" title="${file.name}">${file.name}</p>
+      card.className = 'file-chip'
+      card.innerHTML = `
+        <button class="file-chip__remove" aria-label="Remove" data-id="${id}">×</button>
       `
       fileListEl.appendChild(card)
     }
-    fileListEl.querySelectorAll('.file-card__remove').forEach(btn => {
+    fileListEl.querySelectorAll('.file-chip__remove').forEach(btn => {
       btn.addEventListener('click', () => removeFile(Number(btn.dataset.id)))
     })
   }
@@ -217,12 +203,30 @@ export function setupUploader(element) {
 
     resultArea.innerHTML = ''
     const containers = {}
-    for (const { file, id } of files) {
+    for (const { file, id, objectUrl } of files) {
       const group = document.createElement('div')
       group.className = 'result-group'
-      group.innerHTML = `<div class="result-group__header">${file.name}</div><div class="result-loading">Analyzing label…</div>`
+      const thumbHTML = objectUrl
+        ? `<img class="result-group__img" src="${objectUrl}" alt="${file.name}" />`
+        : `<div class="result-group__pdf">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="9" y1="15" x2="15" y2="15"/>
+              <line x1="9" y1="11" x2="15" y2="11"/>
+            </svg>
+            <span class="file-card__pdf-label">PDF</span>
+          </div>`
+      group.innerHTML = `
+        <div class="result-group__side">
+          ${thumbHTML}
+        </div>
+        <div class="result-group__main">
+          <div class="result-loading">Analyzing label…</div>
+        </div>
+      `
       resultArea.appendChild(group)
-      containers[id] = group
+      containers[id] = group.querySelector('.result-group__main')
     }
 
     const totalFiles = files.length

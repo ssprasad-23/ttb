@@ -224,7 +224,7 @@ code {
 
 #uploader {
   width: 100%;
-  max-width: 560px;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -427,7 +427,7 @@ code {
 }
 
 .result-summary {
-  padding: 10px 16px;
+  padding: 5px 10px;
   font-size: 13px;
   color: var(--text);
   border-bottom: 1px solid var(--border);
@@ -612,63 +612,37 @@ code {
 }
 
 .file-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 0 4px;
+  display: none;
 }
 
-.file-card {
-  position: relative;
+.file-chip {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100px;
   gap: 6px;
-}
-
-.file-card__thumb {
-  width: 100px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 8px;
+  padding: 4px 8px 4px 10px;
+  border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--code-bg);
+  max-width: 220px;
 }
 
-.file-card__pdf-icon {
-  width: 100px;
-  height: 80px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--code-bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: var(--accent);
+.file-chip__name {
+  font-size: 12px;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.file-card__pdf-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-}
-
-.file-card__remove {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 18px;
-  height: 18px;
+.file-chip__remove {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -683,8 +657,49 @@ code {
   }
 }
 
-.file-card__name {
-  font-size: 11px;
+.result-group {
+  width: 100%;
+  margin-top: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.result-group__side {
+  flex-shrink: 0;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.result-group__img {
+  width: 150px;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+}
+
+.result-group__pdf {
+  width: 100px;
+  height: 80px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--accent);
+}
+
+.result-group__name {
+  font-size: 10px;
   color: var(--text);
   margin: 0;
   width: 100%;
@@ -694,22 +709,12 @@ code {
   white-space: nowrap;
 }
 
-.result-group {
-  width: 100%;
-  margin-top: 20px;
+.result-group__main {
+  flex: 1;
+  min-width: 0;
 }
 
-.result-group__header {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.result-group .result-card {
+.result-group__main .result-card {
   margin-top: 0;
 }
 
