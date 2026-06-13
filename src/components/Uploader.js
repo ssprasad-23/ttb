@@ -111,19 +111,19 @@ export function setupUploader(element) {
     if (!startTime) return
 
     // All timers count elapsed from the same startTime, each frozen at its milestone
-    tStartEl.textContent   = formatTime((allDone           ?? now) - startTime)
+    tStartEl.textContent   = formatTime((firstDisplayDone  ?? now) - startTime)
     tB64El.textContent     = formatTime((b64Done           ?? now) - startTime)
     tClaudeEl.textContent  = formatTime((firstClaudeDone   ?? now) - startTime)
     tDisplayEl.textContent = formatTime((firstDisplayDone  ?? now) - startTime)
 
     // Highlight the still-running ones
-    tStartEl.classList.toggle('timing-value--active',   !allDone)
+    tStartEl.classList.toggle('timing-value--active',   !firstDisplayDone)
     tB64El.classList.toggle('timing-value--active',     !b64Done)
     tClaudeEl.classList.toggle('timing-value--active',  !firstClaudeDone)
     tDisplayEl.classList.toggle('timing-value--active', !firstDisplayDone)
 
     // Dot glow → freeze green
-    setDotState(0, allDone          ? 'done' : 'active')
+    setDotState(0, firstDisplayDone ? 'done' : 'active')
     setDotState(1, b64Done          ? 'done' : 'active')
     setDotState(2, firstClaudeDone  ? 'done' : 'active')
     setDotState(3, firstDisplayDone ? 'done' : 'active')
