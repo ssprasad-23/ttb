@@ -1,5 +1,5 @@
 import './style.css'
-import { setupUploader } from './uploader.js'
+import { setupUploader } from './components/Uploader.js'
 
 document.querySelector('#app').innerHTML = `<div id="uploader"></div>`
 
