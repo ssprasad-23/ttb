@@ -2,7 +2,7 @@
 
 ## Overview
 
-Browser-based prototype validating alcohol labels against TTB compliance rules using Claude vision API.
+Prototype that uses Claude's vision API to automate TTB label compliance checks across 6 required fields, with batch support and real-time timing metrics.
 
 ## Approach
 
