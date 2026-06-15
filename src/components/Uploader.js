@@ -15,6 +15,7 @@ function formatTime(ms) {
 
 export function setupUploader(element) {
   element.innerHTML = `
+    <h1 class="app-title">TTB Label AI Verification</h1>
     <div class="timing-bar">
       <div class="timing-stages">
         <div class="timing-progress-line">
