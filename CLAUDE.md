@@ -30,15 +30,21 @@ This is a vanilla JS + Vite single-page app with no framework. The entry point i
 
 1. User drops/selects image(s) or PDF(s) in `Uploader.js`
 2. Each file is converted to a raw base64 payload via `toBase64.js` (`includeDataUrl: false` — the Anthropic SDK wants the payload without the `data:...;base64,` prefix)
-3. `claudeCheck.js` sends the base64 + media type to `claude-sonnet-4-6` as a vision message (images) or document block (PDFs), with a structured system prompt demanding a strict JSON response
-4. The response JSON is parsed and rendered as a pass/fail table per field in `Uploader.js`
+3. `claudecheck.js` sends the base64 + media type to `claude-sonnet-4-6`; PDFs are sent as a `document` block, images as an `image` block
+4. The response JSON is parsed and passed to `ResultDisplay.js`, which renders a pass/fail table per field
 
 All files are processed in parallel via `Promise.allSettled`.
 
 **Timing bar:** `Uploader.js` tracks four milestones (start, all-base64-done, first-Claude-response, first-result-rendered) using `Date.now()` snapshots and a 50ms `setInterval` display ticker. Each timer counts elapsed ms from the shared `startTime` and freezes independently at its own milestone.
 
-**Claude response contract** (`claudeCheck.js`): The system prompt instructs Claude to return only JSON with a top-level `result` ("PASS"/"FAIL"), a `fields` object (keys: `brand_name`, `abv`, `net_contents`, `class_type`, `bottler_address`, `government_warning`), and a `summary` string. Each field has `status`, `found`, and optional `reason`. The parser strips markdown fences before `JSON.parse`.
+**Claude response contract** (`claudecheck.js`): The system prompt instructs Claude to return only JSON with a top-level `result` ("PASS"/"FAIL"), a `fields` object (keys: `brand_name`, `abv`, `net_contents`, `class_type`, `bottler_address`, `government_warning`), and a `summary` string. Each field has `status`, `found`, and optional `reason`. The parser strips markdown fences before `JSON.parse`.
 
-**Fields checked:** brand name, ABV (format: `XX% Alc./Vol.`), net contents, class/type designation, bottler address, government warning (must be bold and word-for-word exact per TTB rules).
+**Government warning special rule:** The system prompt does a pre-scan before evaluating any other fields — if "Government Warning:" appears in title case (instead of all-caps "GOVERNMENT WARNING:"), the entire label is an immediate FAIL regardless of other fields. This logic lives entirely in the prompt, not in JS.
 
-**`src/components/Timer.js`** is currently an empty stub — timing logic lives entirely inside `Uploader.js`.
+**Result rendering** (`ResultDisplay.js`): `renderResult(container, data)` builds a `.result-card` div with a header badge, summary line, and a `<table>` of fields. `FIELD_ORDER` controls display sequence; `FIELD_LABELS` maps API keys to human-readable names. This component is stateless — it receives the parsed JSON from `claudecheck.js` and appends to whatever container `Uploader.js` passes in.
+
+**Fields checked:** brand name (semantic/case-flexible), ABV (format: `XX% Alc./Vol.`), net contents, class/type designation, bottler address, government warning (must be ALL CAPS and bold, word-for-word exact per TTB rules).
+
+**`src/components/Timer.js`** exports `TIMER_HTML` (the timing bar markup) and `setupTimer()` which returns `reset`, `start`, `markB64Done`, `markClaudeDone`, `markDisplayDone`, and `markAllDone` methods.
+
+**File casing note:** The actual filename is `src/utils/claudecheck.js` (all lowercase), but `Uploader.js` imports it as `claudeCheck.js`. This works on macOS (case-insensitive FS) but will break on Linux. Keep the filename lowercase if renaming.

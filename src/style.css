@@ -349,12 +349,20 @@ code {
 }
 
 .preview-actions {
+  position: relative;
   display: flex;
   gap: 8px;
   align-items: center;
   justify-content: center;
   width: 100%;
   padding: 12px 0;
+}
+
+.file-count {
+  position: absolute;
+  left: 0;
+  font-size: 12px;
+  color: var(--text);
 }
 
 .check-btn {
