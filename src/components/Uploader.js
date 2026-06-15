@@ -1,11 +1,26 @@
+/**
+ * Uploader.js
+ * Main UI component for the TTB Label AI Verification tool.
+ *
+ * Responsibilities:
+ *  - Renders the drop zone, file list, action bar, timing bar, and result area
+ *  - Manages the in-memory file queue (add, remove, clear)
+ *  - On "Check Labels": encodes files to base64 in parallel, calls the Claude API
+ *    for each, and renders pass/fail results as they arrive
+ *  - Tracks four timing milestones (Start, Base64, Claude response, Display result)
+ *    and updates the timing bar live every 50ms
+ */
+
 import checkLabel from '../utils/claudeCheck.js'
 import toBase64 from '../utils/toBase64.js'
 import { renderResult } from './ResultDisplay.js'
 
+// File types accepted for upload — passed to both the input[accept] attribute and runtime validation
 const ACCEPTED_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/tiff', 'application/pdf'
 ])
 
+/** Formats milliseconds as SS:mmm (e.g. 02:450) */
 function formatTime(ms) {
   if (ms < 0) ms = 0
   const s = Math.floor(ms / 1000)
@@ -13,6 +28,11 @@ function formatTime(ms) {
   return `${String(s).padStart(2, '0')}:${String(millis).padStart(3, '0')}`
 }
 
+/**
+ * Mounts the full uploader UI into the given element and wires up all interactions.
+ *
+ * @param {HTMLElement} element - The container element to render into (e.g. #uploader)
+ */
 export function setupUploader(element) {
   element.innerHTML = `
     <h1 class="app-title">TTB Label AI Verification</h1>
@@ -63,15 +83,17 @@ export function setupUploader(element) {
     <div id="result-area"></div>
   `
 
-  const dropZone   = element.querySelector('#drop-zone')
-  const fileInput  = element.querySelector('#file-input')
-  const fileListEl = element.querySelector('#file-list')
-  const actionBar  = element.querySelector('#action-bar')
+  // --- DOM refs ---
+  const dropZone    = element.querySelector('#drop-zone')
+  const fileInput   = element.querySelector('#file-input')
+  const fileListEl  = element.querySelector('#file-list')
+  const actionBar   = element.querySelector('#action-bar')
   const removeBtn   = element.querySelector('#remove-btn')
   const checkBtn    = element.querySelector('#check-btn')
   const fileCountEl = element.querySelector('#file-count')
-  const resultArea = element.querySelector('#result-area')
+  const resultArea  = element.querySelector('#result-area')
 
+  // Timing bar display elements
   const tStartEl   = element.querySelector('#t-start')
   const tB64El     = element.querySelector('#t-b64')
   const tClaudeEl  = element.querySelector('#t-claude')
@@ -79,12 +101,12 @@ export function setupUploader(element) {
   const trackFill  = element.querySelector('#track-fill')
   const dots       = [0,1,2,3].map(i => element.querySelector(`#dot-${i}`))
 
-  // --- Timing ---
-  // All 4 timers start together; each freezes independently at its own milestone.
-  // startTime  → b64Done (all b64 done)
-  //           → firstClaudeDone (first API response)
-  //           → firstDisplayDone (first result rendered)
-  //           → allDone (all renders complete; Start freezes here)
+  // --- Timing state ---
+  // All 4 timers share the same startTime; each freezes independently at its milestone:
+  //   startTime → b64Done (all files encoded)
+  //             → firstClaudeDone (first API response received)
+  //             → firstDisplayDone (first result rendered)
+  //             → allDone (all results rendered; Start timer freezes here)
   let timing = {
     startTime: null, b64Done: null,
     firstClaudeDone: null, firstDisplayDone: null,
@@ -95,6 +117,7 @@ export function setupUploader(element) {
     dots[index].className = `timing-dot${state ? ` timing-dot--${state}` : ''}`
   }
 
+  /** Clears the interval and resets all timing state and display to 00:000 */
   function resetTimers() {
     clearInterval(timing.interval)
     timing = {
@@ -108,40 +131,45 @@ export function setupUploader(element) {
     trackFill.style.width = '0%'
   }
 
+  /** Called every 50ms — updates each display value and freezes it once its milestone is set */
   function updateTimingDisplay() {
     const now = Date.now()
     const { startTime, b64Done, firstClaudeDone, firstDisplayDone, allDone } = timing
     if (!startTime) return
 
-    // All timers count elapsed from the same startTime, each frozen at its milestone
     tStartEl.textContent   = formatTime((firstDisplayDone  ?? now) - startTime)
     tB64El.textContent     = formatTime((b64Done           ?? now) - startTime)
     tClaudeEl.textContent  = formatTime((firstClaudeDone   ?? now) - startTime)
     tDisplayEl.textContent = formatTime((firstDisplayDone  ?? now) - startTime)
 
-    // Highlight the still-running ones
+    // Active values pulse; completed values are styled normally
     tStartEl.classList.toggle('timing-value--active',   !firstDisplayDone)
     tB64El.classList.toggle('timing-value--active',     !b64Done)
     tClaudeEl.classList.toggle('timing-value--active',  !firstClaudeDone)
     tDisplayEl.classList.toggle('timing-value--active', !firstDisplayDone)
 
-    // Dot glow → freeze green
+    // Dots glow while running, turn green when frozen
     setDotState(0, firstDisplayDone ? 'done' : 'active')
     setDotState(1, b64Done          ? 'done' : 'active')
     setDotState(2, firstClaudeDone  ? 'done' : 'active')
     setDotState(3, firstDisplayDone ? 'done' : 'active')
 
-    // Progress fill moves right as each non-Start milestone completes
+    // Progress bar advances 33% per completed milestone
     const pct = firstDisplayDone ? 100 : firstClaudeDone ? 66 : b64Done ? 33 : 0
     trackFill.style.width = `${pct}%`
 
     if (allDone) clearInterval(timing.interval)
   }
 
-  // --- File management ---
-  let files = []
-  let nextId = 0
+  // --- File queue ---
+  let files = []  // Array of { file: File, id: number, objectUrl: string|null }
+  let nextId = 0  // Monotonically increasing ID for stable file identification
 
+  /**
+   * Validates and adds incoming files to the queue.
+   * Unsupported file types are silently skipped.
+   * Object URLs are created for images (for thumbnails); PDFs get null.
+   */
   function addFiles(incoming) {
     for (const file of incoming) {
       if (!ACCEPTED_TYPES.has(file.type)) continue
@@ -153,6 +181,7 @@ export function setupUploader(element) {
     resetTimers()
   }
 
+  /** Removes a single file by ID and revokes its object URL to free memory */
   function removeFile(id) {
     const idx = files.findIndex(f => f.id === id)
     if (idx === -1) return
@@ -164,6 +193,7 @@ export function setupUploader(element) {
     if (files.length === 0) { resultArea.innerHTML = ''; resetTimers() }
   }
 
+  /** Re-renders the file chip list and updates the file count label */
   function renderFileList() {
     fileListEl.innerHTML = ''
     fileCountEl.textContent = `${files.length} file${files.length === 1 ? '' : 's'} selected`
@@ -181,12 +211,13 @@ export function setupUploader(element) {
     })
   }
 
-  // --- Drop zone ---
-  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragging') })
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragging'))
-  dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragging'); addFiles(Array.from(e.dataTransfer.files)) })
-  fileInput.addEventListener('change', () => { addFiles(Array.from(fileInput.files)); fileInput.value = '' })
+  // --- Drop zone events ---
+  dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('dragging') })
+  dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragging'))
+  dropZone.addEventListener('drop',      (e) => { e.preventDefault(); dropZone.classList.remove('dragging'); addFiles(Array.from(e.dataTransfer.files)) })
+  fileInput.addEventListener('change',   ()  => { addFiles(Array.from(fileInput.files)); fileInput.value = '' })
 
+  // Clear all files, results, and timing state
   removeBtn.addEventListener('click', () => {
     files.forEach(({ objectUrl }) => { if (objectUrl) URL.revokeObjectURL(objectUrl) })
     files = []
@@ -197,7 +228,7 @@ export function setupUploader(element) {
     resetTimers()
   })
 
-  // --- Check ---
+  // --- Check Labels ---
   checkBtn.addEventListener('click', async () => {
     if (files.length === 0) return
     checkBtn.disabled = true
@@ -207,11 +238,14 @@ export function setupUploader(element) {
     timing.startTime = Date.now()
     timing.interval = setInterval(updateTimingDisplay, 50)
 
+    // Pre-build a result group for each file so results appear in upload order
     resultArea.innerHTML = ''
     const containers = {}
     for (const { file, id, objectUrl } of files) {
       const group = document.createElement('div')
       group.className = 'result-group'
+
+      // Images get a thumbnail; PDFs get a generic icon
       const thumbHTML = objectUrl
         ? `<img class="result-group__img" src="${objectUrl}" alt="${file.name}" />`
         : `<div class="result-group__pdf">
@@ -223,10 +257,9 @@ export function setupUploader(element) {
             </svg>
             <span class="file-card__pdf-label">PDF</span>
           </div>`
+
       group.innerHTML = `
-        <div class="result-group__side">
-          ${thumbHTML}
-        </div>
+        <div class="result-group__side">${thumbHTML}</div>
         <div class="result-group__main">
           <div class="result-loading">Analyzing label…</div>
         </div>
@@ -238,11 +271,13 @@ export function setupUploader(element) {
     const totalFiles = files.length
     let b64DoneCount = 0
 
+    // Process all files in parallel; Promise.allSettled ensures one failure doesn't block others
     await Promise.allSettled(files.map(async ({ file, id }) => {
       const container = containers[id]
       try {
         const base64 = await toBase64(file, { includeDataUrl: false })
 
+        // Freeze b64 timer once every file has finished encoding
         b64DoneCount++
         if (b64DoneCount === totalFiles && !timing.b64Done) {
           timing.b64Done = Date.now()
@@ -250,14 +285,17 @@ export function setupUploader(element) {
 
         const result = await checkLabel(base64, file.type)
 
+        // Freeze Claude timer on the first response received
         if (!timing.firstClaudeDone) timing.firstClaudeDone = Date.now()
 
         container.querySelector('.result-loading')?.remove()
         renderResult(container, result)
 
+        // Freeze display timer on the first result rendered
         if (!timing.firstDisplayDone) timing.firstDisplayDone = Date.now()
 
       } catch (err) {
+        // On error, advance all unfrozen milestones so the timing bar doesn't hang
         b64DoneCount++
         if (b64DoneCount === totalFiles && !timing.b64Done)   timing.b64Done = Date.now()
         if (!timing.firstClaudeDone)  timing.firstClaudeDone  = Date.now()
@@ -277,5 +315,4 @@ export function setupUploader(element) {
     checkBtn.disabled = false
     checkBtn.textContent = 'Check Labels'
   })
-
 }
