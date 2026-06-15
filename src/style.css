@@ -357,6 +357,12 @@ code {
   padding: 12px 0;
 }
 
+.file-count {
+  font-size: 12px;
+  color: var(--text);
+  margin-right: 4px;
+}
+
 .check-btn {
   font-size: 13px;
   font-weight: 600;

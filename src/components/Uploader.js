@@ -56,8 +56,9 @@ export function setupUploader(element) {
     </div>
     <div class="file-list" id="file-list"></div>
     <div class="preview-actions" id="action-bar" hidden>
+      <span class="file-count" id="file-count"></span>
       <button class="check-btn" id="check-btn">Check Labels</button>
-      <button class="remove-btn" id="remove-btn">Remove All</button>
+      <button class="remove-btn" id="remove-btn">Clear</button>
     </div>
     <div id="result-area"></div>
   `
@@ -66,8 +67,9 @@ export function setupUploader(element) {
   const fileInput  = element.querySelector('#file-input')
   const fileListEl = element.querySelector('#file-list')
   const actionBar  = element.querySelector('#action-bar')
-  const removeBtn  = element.querySelector('#remove-btn')
-  const checkBtn   = element.querySelector('#check-btn')
+  const removeBtn   = element.querySelector('#remove-btn')
+  const checkBtn    = element.querySelector('#check-btn')
+  const fileCountEl = element.querySelector('#file-count')
   const resultArea = element.querySelector('#result-area')
 
   const tStartEl   = element.querySelector('#t-start')
@@ -164,10 +166,12 @@ export function setupUploader(element) {
 
   function renderFileList() {
     fileListEl.innerHTML = ''
+    fileCountEl.textContent = `${files.length} file${files.length === 1 ? '' : 's'} selected`
     for (const { file, id } of files) {
       const card = document.createElement('div')
       card.className = 'file-chip'
       card.innerHTML = `
+        <span class="file-chip__name">${file.name}</span>
         <button class="file-chip__remove" aria-label="Remove" data-id="${id}">×</button>
       `
       fileListEl.appendChild(card)
