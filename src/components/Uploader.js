@@ -13,7 +13,7 @@
 
 import checkLabel from '../utils/claudeCheck.js'
 import toBase64 from '../utils/toBase64.js'
-import { renderResult } from './ResultDisplay.js'
+import renderResult from './ResultDisplay.js'
 
 // File types accepted for upload — passed to both the input[accept] attribute and runtime validation
 const ACCEPTED_TYPES = new Set([
@@ -33,55 +33,8 @@ function formatTime(ms) {
  *
  * @param {HTMLElement} element - The container element to render into (e.g. #uploader)
  */
-export function setupUploader(element) {
-  element.innerHTML = `
-    <h1 class="app-title">TTB Label AI Verification</h1>
-    <div class="timing-bar">
-      <div class="timing-stages">
-        <div class="timing-progress-line">
-          <div class="timing-progress-fill" id="track-fill"></div>
-        </div>
-        <div class="timing-item">
-          <span class="timing-dot" id="dot-0"></span>
-          <span class="timing-label">Start</span>
-          <span class="timing-value" id="t-start">00:000</span>
-        </div>
-        <div class="timing-item">
-          <span class="timing-dot" id="dot-1"></span>
-          <span class="timing-label">Base64 encoding</span>
-          <span class="timing-value" id="t-b64">00:000</span>
-        </div>
-        <div class="timing-item">
-          <span class="timing-dot" id="dot-2"></span>
-          <span class="timing-label">Claude response</span>
-          <span class="timing-value" id="t-claude">00:000</span>
-        </div>
-        <div class="timing-item">
-          <span class="timing-dot" id="dot-3"></span>
-          <span class="timing-label">Display result</span>
-          <span class="timing-value" id="t-display">00:000</span>
-        </div>
-      </div>
-    </div>
-    <div class="drop-zone" id="drop-zone">
-      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      <p class="drop-label">Drag &amp; drop files here</p>
-      <p class="drop-sub">or <label class="browse-link" for="file-input">browse to upload</label></p>
-      <p class="drop-formats">JPG · PNG · WEBP · GIF · TIFF · PDF</p>
-      <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,application/pdf" multiple hidden />
-    </div>
-    <div class="file-list" id="file-list"></div>
-    <div class="preview-actions" id="action-bar" hidden>
-      <span class="file-count" id="file-count"></span>
-      <button class="check-btn" id="check-btn">Check Labels</button>
-      <button class="remove-btn" id="remove-btn">Clear</button>
-    </div>
-    <div id="result-area"></div>
-  `
+function setupUploader(element) {
+  element.innerHTML = UPLOADER_HTML
 
   // --- DOM refs ---
   const dropZone    = element.querySelector('#drop-zone')
@@ -316,3 +269,54 @@ export function setupUploader(element) {
     checkBtn.textContent = 'Check Labels'
   })
 }
+
+const UPLOADER_HTML = `
+  <h1 class="app-title">TTB Label AI Verification</h1>
+  <div class="timing-bar">
+    <div class="timing-stages">
+      <div class="timing-progress-line">
+        <div class="timing-progress-fill" id="track-fill"></div>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-0"></span>
+        <span class="timing-label">Start</span>
+        <span class="timing-value" id="t-start">00:000</span>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-1"></span>
+        <span class="timing-label">Base64 encoding</span>
+        <span class="timing-value" id="t-b64">00:000</span>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-2"></span>
+        <span class="timing-label">Claude response</span>
+        <span class="timing-value" id="t-claude">00:000</span>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-3"></span>
+        <span class="timing-label">Display result</span>
+        <span class="timing-value" id="t-display">00:000</span>
+      </div>
+    </div>
+  </div>
+  <div class="drop-zone" id="drop-zone">
+    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p class="drop-label">Drag &amp; drop files here</p>
+    <p class="drop-sub">or <label class="browse-link" for="file-input">browse to upload</label></p>
+    <p class="drop-formats">JPG · PNG · WEBP · GIF · TIFF · PDF</p>
+    <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/gif,image/tiff,application/pdf" multiple hidden />
+  </div>
+  <div class="file-list" id="file-list"></div>
+  <div class="preview-actions" id="action-bar" hidden>
+    <span class="file-count" id="file-count"></span>
+    <button class="check-btn" id="check-btn">Check Labels</button>
+    <button class="remove-btn" id="remove-btn">Clear</button>
+  </div>
+  <div id="result-area"></div>
+`
+
+export default setupUploader

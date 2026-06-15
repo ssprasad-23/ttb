@@ -13,39 +13,6 @@
  */
 
 /**
- * The HTML markup for the timing bar.
- * Inject this into the page before calling setupTimer().
- */
-export const TIMER_HTML = `
-  <div class="timing-bar">
-    <div class="timing-stages">
-      <div class="timing-progress-line">
-        <div class="timing-progress-fill" id="track-fill"></div>
-      </div>
-      <div class="timing-item">
-        <span class="timing-dot" id="dot-0"></span>
-        <span class="timing-label">Start</span>
-        <span class="timing-value" id="t-start">00:000</span>
-      </div>
-      <div class="timing-item">
-        <span class="timing-dot" id="dot-1"></span>
-        <span class="timing-label">Base64 encoding</span>
-        <span class="timing-value" id="t-b64">00:000</span>
-      </div>
-      <div class="timing-item">
-        <span class="timing-dot" id="dot-2"></span>
-        <span class="timing-label">Claude response</span>
-        <span class="timing-value" id="t-claude">00:000</span>
-      </div>
-      <div class="timing-item">
-        <span class="timing-dot" id="dot-3"></span>
-        <span class="timing-label">Display result</span>
-        <span class="timing-value" id="t-display">00:000</span>
-      </div>
-    </div>
-  </div>`
-
-/**
  * Wires up the timing bar DOM and returns a controller object.
  * Call this after TIMER_HTML has been injected into the page.
  *
@@ -159,3 +126,36 @@ function formatTime(ms) {
   const millis = ms % 1000
   return `${String(s).padStart(2, '0')}:${String(millis).padStart(3, '0')}`
 }
+
+/**
+ * The HTML markup for the timing bar.
+ * Inject this into the page before calling setupTimer().
+ */
+export const TIMER_HTML = `
+  <div class="timing-bar">
+    <div class="timing-stages">
+      <div class="timing-progress-line">
+        <div class="timing-progress-fill" id="track-fill"></div>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-0"></span>
+        <span class="timing-label">Start</span>
+        <span class="timing-value" id="t-start">00:000</span>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-1"></span>
+        <span class="timing-label">Base64 encoding</span>
+        <span class="timing-value" id="t-b64">00:000</span>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-2"></span>
+        <span class="timing-label">Claude response</span>
+        <span class="timing-value" id="t-claude">00:000</span>
+      </div>
+      <div class="timing-item">
+        <span class="timing-dot" id="dot-3"></span>
+        <span class="timing-label">Display result</span>
+        <span class="timing-value" id="t-display">00:000</span>
+      </div>
+    </div>
+  </div>`

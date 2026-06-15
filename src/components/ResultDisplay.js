@@ -29,7 +29,7 @@ const FIELD_ORDER = ['brand_name', 'abv', 'net_contents', 'class_type', 'bottler
  * @param {Object} data.fields - Per-field results keyed by field name
  * @param {string} data.summary - One-sentence overall summary
  */
-export function renderResult(container, data) {
+function renderResult(container, data) {
   const passed = typeof data.result === 'string' && data.result.toUpperCase() === 'PASS'
   const statusClass = data.result ? (passed ? 'pass' : 'fail') : 'unknown'
   const statusLabel = data.result ? data.result.toUpperCase() : 'RESULT'
@@ -74,3 +74,5 @@ export function renderResult(container, data) {
   `
   container.appendChild(card)
 }
+
+export default renderResult

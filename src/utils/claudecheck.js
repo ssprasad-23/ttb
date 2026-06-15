@@ -13,8 +13,6 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 
-// dangerouslyAllowBrowser is intentional — this is a browser-only prototype with no backend.
-// In production, API calls should be proxied through a server to keep the key secret.
 const client = new Anthropic({
   apiKey: import.meta.env.VITE_CLAUDE_API_KEY,
   dangerouslyAllowBrowser: true
