@@ -51,7 +51,7 @@ ttb/
   - Net contents verification
   - Class/type designation
   - Bottler address validation
-  - Government warning (strict ALL CAPS + bold requirement)
+  - Government warning: word "GOVERNMENT WARNING" (strict ALL CAPS + bold requirement). Followed by the exact wording
 - **Performance tracking**: Real-time timing metrics from upload → encoding → API response → display
 - **Batch processing**: Handle multiple files simultaneously
 
