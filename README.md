@@ -14,7 +14,6 @@ ttb/
 ├── .gitignore
 ├── README.md
 ├── CLAUDE.md                  # Claude Code guidance
-├── favicon.svg
 │
 ├── src/
 │   ├── main.js                # Application entry point
@@ -32,10 +31,20 @@ ttb/
 └── node_modules/              # Dependencies (npm install)
 ```
 
+## Architecture
+
+- **Frontend**: Vanilla JS + Vite (no framework)
+- **Vision API**: Claude Sonnet 4.6 with vision capabilities
+- **Entry point**: `index.html` → `src/main.js` → `Uploader` component
+- **Data flow**: 
+  - File upload → File validation
+  - Click button → Base64 encoding (parallel) → Claude API call (vision analysis)
+  - Parse JSON response → Render results table
+
 ## Features
 
 - **Multi-format support**: JPG, PNG, WEBP, GIF, TIFF, PDF
-- **Real-time encoding**: Base64 encoding starts immediately on file upload
+- **Real-time encoding**: Base64 encoding happens when "Check Labels" is clicked
 - **Vision-based validation**: Uses Claude API to analyze label images
 - **Strict compliance checking**:
   - Brand name (semantic matching, capitalization-flexible)
@@ -46,6 +55,16 @@ ttb/
   - Government warning (strict ALL CAPS + bold requirement)
 - **Performance tracking**: Real-time timing metrics from upload → encoding → API response → display
 - **Batch processing**: Handle multiple files simultaneously
+
+### Key Files
+
+- **index.html** - Mounts the Uploader component
+- **src/main.js** - Bootstraps the app, imports and renders Uploader
+- **src/components/Uploader.js** - Core UI: handles file drops, timing bar, results display
+- **src/utils/claudeCheck.js** - System prompt + Claude API call logic (vision analysis)
+- **src/utils/toBase64.js** - Converts files to base64 (no data URL prefix)
+- **src/style.css** - All styling (drop zone, results table, timing bar)
+- **package.json** - Dependencies: `@anthropic-ai/sdk`, Vite, PostCSS
 
 ## Setup
 
@@ -61,11 +80,9 @@ npm install
 ```
 
 2. Create a `.env` file in the project root:
-```bash
-cp .env.example .env
-```
 
-3. Add your Anthropic API key:
+
+3. Add your Anthropic API key in .env file:
 ```
 VITE_CLAUDE_API_KEY=sk-ant-...
 ```
@@ -90,38 +107,3 @@ npm run preview
 ```
 Serves the production build locally
 
-## Usage
-
-1. Start the dev server: `npm run dev`
-2. Open `http://localhost:5173` in your browser
-3. Drag & drop label images/PDFs onto the drop zone, or click to browse
-4. Base64 encoding starts immediately (timing bar displays progress)
-5. Click "Check Labels" to send to Claude for compliance analysis
-6. View results: each field shows PASS/FAIL status with details
-
-## Architecture
-
-- **Frontend**: Vanilla JS + Vite (no framework)
-- **Vision API**: Claude Sonnet 4.6 with vision capabilities
-- **Entry point**: `index.html` → `src/main.js` → `Uploader` component
-- **Data flow**: 
-  - File upload → Base64 encoding (immediate)
-  - Click button → Claude API call (vision analysis)
-  - Parse JSON response → Render results table
-
-
-### Key Files
-
-- **index.html** - Mounts the Uploader component
-- **src/main.js** - Bootstraps the app, imports and renders Uploader
-- **src/components/Uploader.js** - Core UI: handles file drops, timing bar, results display
-- **src/utils/claudeCheck.js** - System prompt + Claude API call logic (vision analysis)
-- **src/utils/toBase64.js** - Converts files to base64 (no data URL prefix)
-- **src/style.css** - All styling (drop zone, results table, timing bar)
-- **vite.config.js** - Vite bundler config
-- **package.json** - Dependencies: `@anthropic-ai/sdk`, Vite, PostCSS
-
-
-## Environment
-
-The `.env` file configures the API key for the browser-based Anthropic SDK. The app handles batch processing in parallel via `Promise.allSettled()`.
