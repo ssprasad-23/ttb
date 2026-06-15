@@ -1,5 +1,4 @@
-# TTB Label Compliance Checker
-
+# TTB Label AI Agent
 An automated tool for validating alcohol label compliance against TTB (Alcohol and Tobacco Tax and Trade Bureau) regulations. Upload label images or PDFs, and get instant pass/fail results with detailed field-by-field analysis.
 
 ## Project Structure
