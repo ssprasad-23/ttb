@@ -191,6 +191,7 @@ export function setupUploader(element) {
     files.forEach(({ objectUrl }) => { if (objectUrl) URL.revokeObjectURL(objectUrl) })
     files = []
     fileListEl.innerHTML = ''
+    fileCountEl.textContent = ''
     actionBar.hidden = true
     resultArea.innerHTML = ''
     resetTimers()

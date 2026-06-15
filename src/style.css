@@ -349,6 +349,7 @@ code {
 }
 
 .preview-actions {
+  position: relative;
   display: flex;
   gap: 8px;
   align-items: center;
@@ -358,9 +359,10 @@ code {
 }
 
 .file-count {
+  position: absolute;
+  left: 0;
   font-size: 12px;
   color: var(--text);
-  margin-right: 4px;
 }
 
 .check-btn {
